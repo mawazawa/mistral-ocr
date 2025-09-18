@@ -17,7 +17,7 @@ const getClient = () => {
   return new Mistral({ apiKey });
 };
 
-const normalizeText = (value?: string | null) => {
+export const normalizeText = (value?: string | null) => {
   if (typeof value !== 'string') {
     return undefined;
   }
