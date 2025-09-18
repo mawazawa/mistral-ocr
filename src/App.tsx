@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
 import './App.css';
 import { readFileAsBase64, parsePageSelection } from './lib/file';
+import { resolveApiUrl } from './lib/api';
 import type { OcrBlock, OcrResponsePayload } from './types/mistral';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
 const describeBlock = (block: OcrBlock): string => {
   if (block.label && block.value) {
@@ -53,7 +52,7 @@ function App() {
         query: question.trim() ? question.trim() : undefined,
       };
 
-      const response = await fetch(`${API_BASE}/api/ocr`, {
+      const response = await fetch(resolveApiUrl('/api/ocr'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
