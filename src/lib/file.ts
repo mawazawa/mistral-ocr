@@ -38,7 +38,7 @@ export const parsePageSelection = (value: string): number[] | undefined => {
     if (rangeMatch) {
       const start = Number.parseInt(rangeMatch[1]!, 10);
       const end = Number.parseInt(rangeMatch[2]!, 10);
-      if (start > end) {
+      if (start === 0 || start > end) {
         continue;
       }
       for (let page = start; page <= end; page += 1) {
