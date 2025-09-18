@@ -34,6 +34,8 @@ export const readFileAsBase64 = (file: File): Promise<string> => {
  * For example, "1, 3-5, 8" becomes `[1, 3, 4, 5, 8]`.
  *
  * @param {string} value - The string to parse.
+ * Page numbers are 1-based; zero or negative values are ignored.
+ *
  * @returns {number[] | undefined} A sorted array of page numbers, or undefined if the input is empty.
  */
 export const parsePageSelection = (value: string): number[] | undefined => {
@@ -54,7 +56,7 @@ export const parsePageSelection = (value: string): number[] | undefined => {
     if (rangeMatch) {
       const start = Number.parseInt(rangeMatch[1]!, 10);
       const end = Number.parseInt(rangeMatch[2]!, 10);
-      if (start > end) {
+      if (start <= 0 || start > end) {
         continue;
       }
       for (let page = start; page <= end; page += 1) {

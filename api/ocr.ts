@@ -47,7 +47,7 @@ const getClient = () => {
  * @param {string | null | undefined} value - The string to normalize.
  * @returns {string | undefined} The trimmed string or undefined.
  */
-const normalizeText = (value?: string | null) => {
+export const normalizeText = (value?: string | null) => {
   if (typeof value !== 'string') {
     return undefined;
   }
