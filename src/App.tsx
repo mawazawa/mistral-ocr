@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import './App.css';
 import { readFileAsBase64, parsePageSelection } from './lib/file';
 import { resolveApiUrl } from './lib/api';
+import { prepareDisplayPages } from './lib/ocr';
 import type { OcrBlock, OcrResponsePayload } from './types/mistral';
 
 const describeBlock = (block: OcrBlock): string => {
@@ -78,16 +79,10 @@ function App() {
     }
   };
 
-  const parsedBlocks = useMemo(() => {
-    const pagesData = result?.ocr?.pages ?? [];
-    return pagesData.map((page) => {
-      const blocks = page.textBlocks ?? [];
-      return {
-        pageNumber: page.pageNumber ?? 0,
-        blocks,
-      };
-    });
-  }, [result]);
+  const displayPages = useMemo(
+    () => prepareDisplayPages(result?.ocr?.pages),
+    [result],
+  );
 
   return (
     <main className="app-shell">
@@ -177,9 +172,9 @@ function App() {
           </article>
         ) : null}
 
-        {parsedBlocks.length ? (
+        {displayPages.length ? (
           <div className="page-grid">
-            {parsedBlocks.map((page) => (
+            {displayPages.map((page) => (
               <article key={page.pageNumber} className="page-card">
                 <h3>Page {page.pageNumber}</h3>
                 {page.blocks.length ? (
@@ -191,6 +186,18 @@ function App() {
                       </li>
                     ))}
                   </ul>
+                ) : page.markdown ? (
+                  <div className="markdown-result">
+                    {page.markdown
+                      .split(/\n\s*\n/)
+                      .map((paragraph) => paragraph.trim())
+                      .filter((paragraph) => paragraph.length > 0)
+                      .map((paragraph, index) => (
+                        <p key={`${page.pageNumber}-paragraph-${index}`}>
+                          {paragraph}
+                        </p>
+                      ))}
+                  </div>
                 ) : (
                   <p>No text blocks detected.</p>
                 )}

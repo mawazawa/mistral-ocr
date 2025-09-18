@@ -179,3 +179,15 @@ button[type='submit']:disabled {
   color: #64748b;
   font-style: italic;
 }
+
+.markdown-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.markdown-result p {
+  margin: 0;
+  color: #0f172a;
+  line-height: 1.5;
+}

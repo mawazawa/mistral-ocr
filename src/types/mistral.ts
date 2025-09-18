@@ -19,8 +19,10 @@ export interface OcrBlock {
 
 export interface OcrPage {
   pageNumber?: number;
+  index?: number;
   width?: number;
   height?: number;
+  markdown?: string;
   textBlocks?: OcrBlock[];
   tables?: OcrBlock[];
   keyValues?: OcrBlock[];
