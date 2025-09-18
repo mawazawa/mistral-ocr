@@ -1,14 +1,38 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Mistral } from '@mistralai/mistralai';
 
+/**
+ * Defines the expected shape of the request body for the OCR endpoint.
+ */
 interface OcrRequestPayload {
+  /**
+   * The base64-encoded string of the PDF file.
+   */
   fileBase64?: string;
+  /**
+   * The name of the file. Defaults to 'document.pdf'.
+   */
   fileName?: string;
+  /**
+   * Whether to include base64-encoded images of the pages in the response.
+   */
   includeImageBase64?: boolean;
+  /**
+   * An array of page numbers to process. Processes all pages if undefined.
+   */
   pages?: number[];
+  /**
+   * An optional question to ask about the document.
+   */
   query?: string;
 }
 
+/**
+ * Initializes and returns a Mistral AI client.
+ *
+ * @returns {Mistral} An instance of the Mistral client.
+ * @throws {Error} If the MISTRAL_API_KEY environment variable is not set.
+ */
 const getClient = () => {
   const apiKey = process.env.MISTRAL_API_KEY;
   if (!apiKey) {
@@ -17,6 +41,12 @@ const getClient = () => {
   return new Mistral({ apiKey });
 };
 
+/**
+ * Trims a string and returns undefined if it's empty.
+ *
+ * @param {string | null | undefined} value - The string to normalize.
+ * @returns {string | undefined} The trimmed string or undefined.
+ */
 const normalizeText = (value?: string | null) => {
   if (typeof value !== 'string') {
     return undefined;
@@ -25,6 +55,17 @@ const normalizeText = (value?: string | null) => {
   return trimmed.length ? trimmed : undefined;
 };
 
+/**
+ * Handles the OCR processing request.
+ *
+ * This function serves as a Vercel serverless function that processes a PDF file for OCR.
+ * It takes a base64-encoded file, uploads it to Mistral AI, performs OCR, and can
+ * optionally answer a question about the document.
+ *
+ * @param {VercelRequest} req - The Vercel request object.
+ * @param {VercelResponse} res - The Vercel response object.
+ * @returns {Promise<void>} A promise that resolves when the response has been sent.
+ */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');

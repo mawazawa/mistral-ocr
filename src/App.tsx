@@ -5,6 +5,12 @@ import type { OcrBlock, OcrResponsePayload } from './types/mistral';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
+/**
+ * Generates a human-readable description for an OCR block.
+ *
+ * @param {OcrBlock} block - The OCR block to describe.
+ * @returns {string} A string description of the block.
+ */
 const describeBlock = (block: OcrBlock): string => {
   if (block.label && block.value) {
     return `${block.label}: ${block.value}`;
@@ -15,6 +21,16 @@ const describeBlock = (block: OcrBlock): string => {
   return block.type ?? 'Unknown block';
 };
 
+/**
+ * The main application component.
+ *
+ * This component renders the user interface for the Mistral Document AI Playground.
+ * It manages the application state, including the selected file, user inputs,
+ * submission status, and API results. It handles the form submission to the
+ * backend API and displays the OCR and Q&A results.
+ *
+ * @returns {JSX.Element} The rendered App component.
+ */
 function App() {
   const [file, setFile] = useState<File | null>(null);
   const [question, setQuestion] = useState('');
