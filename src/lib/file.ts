@@ -1,3 +1,10 @@
+/**
+ * Reads a `File` object and converts it to a base64 encoded string.
+ *
+ * @param {File} file - The file to read.
+ * @returns {Promise<string>} A promise that resolves with the base64 string,
+ * excluding the data URL prefix.
+ */
 export const readFileAsBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -20,6 +27,15 @@ export const readFileAsBase64 = (file: File): Promise<string> => {
   });
 };
 
+/**
+ * Parses a string of page selections into a sorted array of unique numbers.
+ *
+ * The string can contain individual numbers and ranges, separated by commas.
+ * For example, "1, 3-5, 8" becomes `[1, 3, 4, 5, 8]`.
+ *
+ * @param {string} value - The string to parse.
+ * @returns {number[] | undefined} A sorted array of page numbers, or undefined if the input is empty.
+ */
 export const parsePageSelection = (value: string): number[] | undefined => {
   const trimmed = value.trim();
   if (!trimmed) {

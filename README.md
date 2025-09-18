@@ -1,13 +1,41 @@
 # Mistral Document AI OCR Playground
 
-A Vite + React application that demonstrates how to extract structured information from complex PDFs with [Mistral Document AI OCR](https://docs.mistral.ai/guides/document_ai/basic_ocr/) and optionally run document-grounded question answering. The UI lets you upload a PDF, pick page ranges, request inline images, and submit follow-up questions. All requests are proxied through a serverless API route so the Mistral API key stays on the server side.
+This repository contains a fully-documented Vite + React application that serves as a playground for the [Mistral Document AI OCR](https://docs.mistral.ai/guides/document_ai/basic_ocr/).
+
+## Project Purpose
+
+The primary goal of this project is to provide a clear, well-documented example of how to build a full-stack application that interacts with Mistral's Document AI services. It demonstrates best practices for:
+
+- **Frontend Development**: Building a responsive user interface with React and Vite.
+- **Backend Development**: Creating a secure serverless backend with Vercel Functions to handle API requests.
+- **API Integration**: Securely calling the Mistral AI API from a server-side environment.
+- **Code Documentation**: Following JSDoc standards to ensure the codebase is easy to understand and maintain.
+
+It allows users to upload a PDF, extract structured information, and perform question-answering tasks on the document content.
 
 ## Features
-- Upload local PDF files and select specific pages for processing
-- Calls `ocr.process` with the `mistral-ocr-latest` model and displays structured text blocks
-- Optional Document Q&A follow-up powered by `chat.complete` with the `mistral-small-latest` model
-- Serverless function (`api/ocr.ts`) handles file upload, signed URL generation, OCR invocation, and question answering
-- Ready for Vercel deployment and local development with `vercel dev`
+
+- **PDF Upload**: Upload local PDF files for analysis.
+- **Page Selection**: Specify particular pages or page ranges for processing.
+- **Structured OCR**: Calls `ocr.process` to extract text, tables, and other structured data.
+- **Document Q&A**: Optionally ask questions about the document using a chat model.
+- **Secure API Calls**: Proxies all Mistral API requests through a serverless backend to protect the API key.
+- **Vercel-Ready**: Designed for easy deployment on Vercel.
+
+## Codebase Overview
+
+The repository is structured to separate frontend and backend concerns:
+
+- **`api/ocr.ts`**: A Vercel serverless function that acts as the backend. It receives requests from the frontend, securely calls the Mistral API, and returns the results.
+- **`src/`**: The main directory for the React frontend application.
+  - **`src/App.tsx`**: The core React component that renders the UI and manages application state.
+  - **`src/lib/file.ts`**: Contains utility functions for file handling, such as reading a file as a base64 string.
+  - **`src/types/mistral.ts`**: Defines TypeScript interfaces for the data structures used throughout the application, primarily for the Mistral API response.
+- **`public/`**: Static assets for the Vite application.
+
+## Documentation
+
+All functions, classes, and type interfaces in the codebase are fully documented using JSDoc. This provides developers with clear explanations of the code's purpose, parameters, and return values, which can be easily picked up by IDEs and documentation generation tools.
 
 ## Prerequisites
 - Node.js 20+
