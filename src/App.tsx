@@ -32,6 +32,7 @@ function App() {
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    console.log('handleSubmit: start');
     event.preventDefault();
     if (!file) {
       setError('Please choose a PDF to analyse.');
@@ -52,6 +53,7 @@ function App() {
         pages: parsedPages,
         query: question.trim() ? question.trim() : undefined,
       };
+      console.log('handleSubmit: payload', payload);
 
       const response = await fetch(resolveApiUrl('/api/ocr'), {
         method: 'POST',
@@ -67,12 +69,14 @@ function App() {
       }
 
       const data = (await response.json()) as OcrResponsePayload;
+      console.log('handleSubmit: success', data);
       setResult(data);
     } catch (submissionError) {
       const message =
         submissionError instanceof Error
           ? submissionError.message
           : 'Failed to process document.';
+      console.error('handleSubmit: error', message);
       setError(message);
     } finally {
       setIsSubmitting(false);

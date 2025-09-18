@@ -38,6 +38,9 @@ export const createApiUrlResolver = (configuredBaseUrl?: string) => {
 };
 
 export const resolveApiUrl = (path: string): string => {
+  console.log('resolveApiUrl: start', { path });
   const base = import.meta.env.VITE_API_BASE_URL;
-  return createApiUrlResolver(base)(path);
+  const result = createApiUrlResolver(base)(path);
+  console.log('resolveApiUrl: result', { base, result });
+  return result;
 };

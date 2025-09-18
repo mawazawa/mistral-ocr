@@ -1,4 +1,5 @@
 export const readFileAsBase64 = (file: File): Promise<string> => {
+  console.log('readFileAsBase64: start');
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -6,13 +7,16 @@ export const readFileAsBase64 = (file: File): Promise<string> => {
       const result = reader.result;
       if (typeof result === 'string') {
         const base64 = result.split(',')[1] ?? '';
+        console.log('readFileAsBase64: success');
         resolve(base64);
       } else {
+        console.error('readFileAsBase64: error - Unsupported file reader result.');
         reject(new Error('Unsupported file reader result.'));
       }
     };
 
     reader.onerror = () => {
+      console.error('readFileAsBase64: error', reader.error);
       reject(reader.error ?? new Error('Failed to read file.'));
     };
 
@@ -21,8 +25,10 @@ export const readFileAsBase64 = (file: File): Promise<string> => {
 };
 
 export const parsePageSelection = (value: string): number[] | undefined => {
+  console.log('parsePageSelection: start', { value });
   const trimmed = value.trim();
   if (!trimmed) {
+    console.log('parsePageSelection: result', undefined);
     return undefined;
   }
 
@@ -53,5 +59,7 @@ export const parsePageSelection = (value: string): number[] | undefined => {
     }
   }
 
-  return pages.size ? Array.from(pages).sort((a, b) => a - b) : undefined;
+  const result = pages.size ? Array.from(pages).sort((a, b) => a - b) : undefined;
+  console.log('parsePageSelection: result', result);
+  return result;
 };
