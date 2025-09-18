@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import './App.css';
 import { readFileAsBase64, parsePageSelection } from './lib/file';
 import { resolveApiUrl } from './lib/api';
@@ -23,6 +23,14 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<OcrResponsePayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController>();
+
+  useEffect(() => {
+    // Abort request on unmount
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const nextFile = event.target.files && event.target.files[0];
@@ -37,6 +45,11 @@ function App() {
       setError('Please choose a PDF to analyse.');
       return;
     }
+
+    // Abort any pending request
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     setIsSubmitting(true);
     setError(null);
@@ -59,6 +72,7 @@ function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -69,13 +83,20 @@ function App() {
       const data = (await response.json()) as OcrResponsePayload;
       setResult(data);
     } catch (submissionError) {
+      if ((submissionError as Error).name === 'AbortError') {
+        // Request was cancelled, do nothing.
+        return;
+      }
       const message =
         submissionError instanceof Error
           ? submissionError.message
           : 'Failed to process document.';
       setError(message);
     } finally {
-      setIsSubmitting(false);
+      // If the request was not aborted by a new request, then we can safely set isSubmitting to false.
+      if (!controller.signal.aborted) {
+        setIsSubmitting(false);
+      }
     }
   };
 
