@@ -10,8 +10,8 @@ const normalizePageNumber = (page: OcrPage, index: number): number => {
   if (typeof page.pageNumber === 'number' && Number.isFinite(page.pageNumber)) {
     return page.pageNumber;
   }
-  if (typeof page.index === 'number' && Number.isFinite(page.index)) {
-    return page.index + 1;
+  if (typeof page.index === 'number' && Number.isFinite(page.index) && page.index > 0) {
+    return page.index;
   }
   return index + 1;
 };
