@@ -71,6 +71,10 @@ export interface OcrPage {
    */
   pageNumber?: number;
   /**
+   * Zero-based index of the page in the original document.
+   */
+  index?: number;
+  /**
    * The width of the page in pixels.
    */
   width?: number;
@@ -78,6 +82,10 @@ export interface OcrPage {
    * The height of the page in pixels.
    */
   height?: number;
+  /**
+   * Markdown fallback representation, provided when no structured blocks exist.
+   */
+  markdown?: string;
   /**
    * An array of text blocks found on the page.
    */
