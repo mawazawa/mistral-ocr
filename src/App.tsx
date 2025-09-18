@@ -4,7 +4,7 @@ import { readFileAsBase64, parsePageSelection, validateFile } from './lib/file';
 import { resolveApiUrl } from './lib/api';
 import { prepareDisplayPages } from './lib/ocr';
 import ResultsViewer from './components/ResultsViewer';
-import type { OcrBlock, OcrResponsePayload } from './types/mistral';
+import type { OcrResponsePayload } from './types/mistral';
 
 /**
  * Generates a human-readable description for an OCR block.
@@ -12,15 +12,7 @@ import type { OcrBlock, OcrResponsePayload } from './types/mistral';
  * @param {OcrBlock} block - The OCR block to describe.
  * @returns {string} A string description of the block.
  */
-const describeBlock = (block: OcrBlock): string => {
-  if (block.label && block.value) {
-    return `${block.label}: ${block.value}`;
-  }
-  if (block.text) {
-    return block.text;
-  }
-  return block.type ?? 'Unknown block';
-};
+// Intentionally removed unused helper to satisfy lint rules
 
 /**
  * The main application component.
@@ -315,29 +307,7 @@ function App() {
           ) : null}
         </header>
 
-        <div className="tabs">
-          <button
-            type="button"
-            className={`tab ${activeTab === 'structured' ? 'active' : ''}`}
-            onClick={() => setActiveTab('structured')}
-          >
-            Structured
-          </button>
-          <button
-            type="button"
-            className={`tab ${activeTab === 'markdown' ? 'active' : ''}`}
-            onClick={() => setActiveTab('markdown')}
-          >
-            Markdown
-          </button>
-          <button
-            type="button"
-            className={`tab ${activeTab === 'document' ? 'active' : ''}`}
-            onClick={() => setActiveTab('document')}
-          >
-            Document
-          </button>
-        </div>
+        {/* Tabs moved inside ResultsViewer */}
 
         <ResultsViewer
           pages={displayPages}

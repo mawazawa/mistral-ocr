@@ -136,7 +136,7 @@ export const ResultsViewer: React.FC<ResultsViewerProps> = ({ pages, documentUrl
                 </ul>
               </aside>
 
-              <section className="page-stage" style={{ ['--zoom' as any]: `${zoom}%` }}>
+              <section className="page-stage" style={{ ['--zoom' as unknown as string]: `${zoom}%` }}>
                 <article className="page-card scaled" data-zoom={`${zoom}`}>
                   <h3>Page {page.pageNumber}</h3>
                   {activeTab === 'structured' ? (
