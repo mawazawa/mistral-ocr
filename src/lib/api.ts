@@ -31,7 +31,7 @@ export const createApiUrlResolver = (configuredBaseUrl?: string) => {
       }
 
       return url.toString();
-    } catch (error) {
+    } catch {
       return path;
     }
   };

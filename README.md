@@ -15,11 +15,15 @@ It allows users to upload a PDF, extract structured information, and perform que
 
 ## Features
 
-- **PDF Upload**: Upload local PDF files for analysis.
+- **PDF Upload**: Upload local PDF files for analysis with drag-and-drop support.
+- **File Validation**: Frontend validation for file type, size, and format.
 - **Page Selection**: Specify particular pages or page ranges for processing.
 - **Structured OCR**: Calls `ocr.process` to extract text, tables, and other structured data.
 - **Document Q&A**: Optionally ask questions about the document using a chat model.
+- **Progress Indicators**: Real-time progress tracking during file processing.
+- **Enhanced UX**: Improved error messages and user feedback.
 - **Secure API Calls**: Proxies all Mistral API requests through a serverless backend to protect the API key.
+- **CI/CD Ready**: GitHub Actions workflow for automated testing and deployment.
 - **Vercel-Ready**: Designed for easy deployment on Vercel.
 
 ## Codebase Overview
@@ -79,10 +83,11 @@ All functions, classes, and type interfaces in the codebase are fully documented
    ```
 
 ## How It Works
-1. The frontend converts the selected PDF to base64, parses optional page ranges, and sends the payload to `/api/ocr`.
-2. The serverless handler uploads the document via `client.files.upload`, requests a signed URL, and calls `client.ocr.process` using the structured OCR output format.
-3. If a question is supplied, the handler invokes `client.chat.complete` with a `document_url` content block that points to the signed PDF, returning the grounded answer.
-4. The UI displays the OCR blocks per page (capped at 50 blocks per page for readability) and the optional answer.
+1. **File Upload**: Users can drag-and-drop or select a PDF file. The frontend validates file type and size before processing.
+2. **File Processing**: The frontend converts the selected PDF to base64, parses optional page ranges, and shows progress indicators.
+3. **API Processing**: The serverless handler uploads the document via `client.files.upload`, requests a signed URL, and calls `client.ocr.process` using the structured OCR output format.
+4. **Q&A Processing**: If a question is supplied, the handler invokes `client.chat.complete` with a `document_url` content block that points to the signed PDF, returning the grounded answer.
+5. **Results Display**: The UI displays the OCR blocks per page (capped at 50 blocks per page for readability) and the optional answer with enhanced error handling.
 
 ## Deployment
 1. **Create the GitHub repository**

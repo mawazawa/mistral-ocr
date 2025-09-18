@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import './App.css';
-import { readFileAsBase64, parsePageSelection } from './lib/file';
+import { readFileAsBase64, parsePageSelection, validateFile } from './lib/file';
 import { resolveApiUrl } from './lib/api';
 import { prepareDisplayPages } from './lib/ocr';
 import type { OcrBlock, OcrResponsePayload } from './types/mistral';
@@ -39,12 +39,58 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<OcrResponsePayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const nextFile = event.target.files && event.target.files[0];
-    setFile(nextFile ?? null);
+    
+    if (nextFile) {
+      handleFileSelection(nextFile);
+    } else {
+      setFile(null);
+      setResult(null);
+      setError(null);
+    }
+  };
+
+  const handleFileSelection = (selectedFile: File) => {
+    const validation = validateFile(selectedFile);
+    if (!validation.isValid) {
+      setError(validation.error || 'Invalid file');
+      setFile(null);
+      setResult(null);
+      return;
+    }
+    
+    setFile(selectedFile);
     setResult(null);
     setError(null);
+  };
+
+  const handleDragEnter = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragOver(false);
+    
+    const droppedFiles = event.dataTransfer.files;
+    if (droppedFiles.length > 0) {
+      const droppedFile = droppedFiles[0];
+      handleFileSelection(droppedFile);
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -57,9 +103,15 @@ function App() {
     setIsSubmitting(true);
     setError(null);
     setResult(null);
+    setUploadProgress(0);
 
     try {
+      // Progress: Reading file
+      setUploadProgress(20);
       const base64 = await readFileAsBase64(file);
+      
+      // Progress: Preparing payload
+      setUploadProgress(40);
       const parsedPages = parsePageSelection(pages);
       const payload = {
         fileBase64: base64,
@@ -69,6 +121,8 @@ function App() {
         query: question.trim() ? question.trim() : undefined,
       };
 
+      // Progress: Sending request
+      setUploadProgress(60);
       const response = await fetch(resolveApiUrl('/api/ocr'), {
         method: 'POST',
         headers: {
@@ -78,20 +132,57 @@ function App() {
       });
 
       if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || 'Unexpected error while calling OCR API.');
+        let message = 'Unexpected error while calling OCR API.';
+        try {
+          const errorData = await response.json();
+          if (errorData.error?.message) {
+            message = errorData.error.message;
+          }
+        } catch {
+          // If response is not JSON, try to get text
+          try {
+            message = await response.text();
+          } catch {
+            // Keep default message if all parsing fails
+          }
+        }
+        throw new Error(message);
       }
 
+      // Progress: Processing response
+      setUploadProgress(80);
       const data = (await response.json()) as OcrResponsePayload;
+      setUploadProgress(100);
       setResult(data);
     } catch (submissionError) {
-      const message =
-        submissionError instanceof Error
-          ? submissionError.message
-          : 'Failed to process document.';
+      let message = 'Failed to process document.';
+      
+      if (submissionError instanceof Error) {
+        const errorMsg = submissionError.message.toLowerCase();
+        
+        // Categorize errors for better user experience
+        if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
+          message = 'Network error. Please check your connection and try again.';
+        } else if (errorMsg.includes('timeout') || errorMsg.includes('timed out')) {
+          message = 'Request timed out. Please try again with a smaller file.';
+        } else if (errorMsg.includes('file too large') || errorMsg.includes('payload too large')) {
+          message = 'File is too large. Please choose a file smaller than 4MB.';
+        } else if (errorMsg.includes('invalid') || errorMsg.includes('bad request')) {
+          message = 'Invalid file or request. Please ensure you selected a valid PDF file.';
+        } else if (errorMsg.includes('unauthorized') || errorMsg.includes('api key')) {
+          message = 'Authentication error. Please contact support.';
+        } else if (errorMsg.includes('rate limit') || errorMsg.includes('quota')) {
+          message = 'Service temporarily unavailable. Please try again in a few minutes.';
+        } else {
+          // Use the original message if it's user-friendly, otherwise use generic message
+          message = submissionError.message.length < 200 ? submissionError.message : message;
+        }
+      }
+      
       setError(message);
     } finally {
       setIsSubmitting(false);
+      setUploadProgress(0);
     }
   };
 
@@ -104,31 +195,61 @@ function App() {
     <main className="app-shell">
       <section className="panel">
         <header>
-          <h1>Mistral Document AI Playground</h1>
+          <h1>Document Intelligence</h1>
           <p>
-            Upload a complex PDF and optionally ask a question. The request is proxied through
-            a serverless function that calls Mistral&apos;s OCR and Document Q&amp;A endpoints, so your
-            API key stays on the server.
+            Transform your PDFs into structured, searchable data with AI-powered OCR and Q&A capabilities.
           </p>
         </header>
 
         <form className="ocr-form" onSubmit={handleSubmit}>
-          <label className="form-field">
+          <div className="form-field">
             <span>PDF file</span>
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={handleFileChange}
-              required
-              disabled={isSubmitting}
-            />
-          </label>
+            <div 
+              className={`file-upload-area ${isDragOver ? 'drag-over' : ''} ${file ? 'has-file' : ''}`}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            >
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={handleFileChange}
+                required
+                disabled={isSubmitting}
+                className="file-input"
+                id="pdf-upload"
+              />
+              <label htmlFor="pdf-upload" className="file-upload-label">
+                {file ? (
+                  <div className="file-selected">
+                    <span className="file-icon">📋</span>
+                    <span className="file-name">{file.name}</span>
+                    <span className="file-size">
+                      {(file.size / (1024 * 1024)).toFixed(2)} MB
+                    </span>
+                  </div>
+                ) : isDragOver ? (
+                  <div className="drag-prompt">
+                    <span className="drag-icon">📋</span>
+                    <span>Drop your PDF file here</span>
+                  </div>
+                ) : (
+                  <div className="upload-prompt">
+                    <span className="upload-icon">📎</span>
+                    <span>Select a PDF or drag and drop</span>
+                    <small>Maximum file size: 4 MB</small>
+                  </div>
+                )}
+              </label>
+            </div>
+          </div>
 
           <label className="form-field">
-            <span>Pages to include (e.g. 1, 3-4)</span>
+            <span>Pages</span>
             <input
               type="text"
-              placeholder="All pages"
+              placeholder="1, 3-5, 8 (optional)"
               value={pages}
               onChange={(event) => setPages(event.target.value)}
               disabled={isSubmitting}
@@ -136,9 +257,9 @@ function App() {
           </label>
 
           <label className="form-field">
-            <span>Ask a question about the document</span>
+            <span>Question</span>
             <textarea
-              placeholder="Optional question for the Document Q&A model"
+              placeholder="Ask a question about your document..."
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
               rows={3}
@@ -153,11 +274,28 @@ function App() {
               onChange={(event) => setIncludeImages(event.target.checked)}
               disabled={isSubmitting}
             />
-            <span>Include inline page images (base64) in the OCR response</span>
+            <span>Include page images in response</span>
           </label>
 
+          {isSubmitting && uploadProgress > 0 && (
+            <div className="progress-container">
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+              <span className="progress-text">
+                {uploadProgress < 40 ? 'Reading file...' :
+                 uploadProgress < 60 ? 'Preparing request...' :
+                 uploadProgress < 80 ? 'Processing with AI...' :
+                 uploadProgress < 100 ? 'Finalizing...' : 'Complete!'}
+              </span>
+            </div>
+          )}
+
           <button type="submit" disabled={isSubmitting || !file}>
-            {isSubmitting ? 'Processing…' : 'Run OCR'}
+            {isSubmitting ? 'Processing…' : 'Analyze Document'}
           </button>
         </form>
 
@@ -166,17 +304,11 @@ function App() {
 
       <section className="panel results">
         <header>
-          <h2>Results</h2>
+          <h2>Analysis Results</h2>
           {result?.model ? (
             <p className="meta">
-              OCR model <strong>{result.model}</strong>
-              {result.qaModel ? ` · Q&A model ${result.qaModel}` : ''}
-            </p>
-          ) : null}
-          {result?.documentUrl ? (
-            <p className="meta">
-              Processed document stored at a temporary signed URL. Keep it secret and recycle when
-              finished.
+              Processed with <strong>{result.model}</strong>
+              {result.qaModel ? ` and ${result.qaModel}` : ''}
             </p>
           ) : null}
         </header>
@@ -221,7 +353,7 @@ function App() {
             ))}
           </div>
         ) : (
-          <p className="placeholder">Run an OCR job to inspect structured results here.</p>
+          <p className="placeholder">Your document analysis will appear here</p>
         )}
       </section>
     </main>

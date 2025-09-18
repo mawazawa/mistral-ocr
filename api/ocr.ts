@@ -12,31 +12,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Mistral } from '@mistralai/mistralai';
 import { z } from 'zod';
 
-/**
- * Defines the expected shape of the request body for the OCR endpoint.
- */
-interface OcrRequestPayload {
-  /**
-   * The base64-encoded string of the PDF file.
-   */
-  fileBase64?: string;
-  /**
-   * The name of the file. Defaults to 'document.pdf'.
-   */
-  fileName?: string;
-  /**
-   * Whether to include base64-encoded images of the pages in the response.
-   */
-  includeImageBase64?: boolean;
-  /**
-   * An array of page numbers to process. Processes all pages if undefined.
-   */
-  pages?: number[];
-  /**
-   * An optional question to ask about the document.
-   */
-  query?: string;
-}
+// Note: Request body validation is handled by OcrRequestSchema below
 
 /**
  * Initializes and returns a Mistral AI client.
@@ -67,7 +43,7 @@ export const normalizeText = (value?: string | null) => {
 };
 
 // Validation schema and limits
-const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES ?? 4_500_000);
+const getMaxUploadBytes = () => Number(process.env.MAX_UPLOAD_BYTES ?? 4_500_000);
 
 const OcrRequestSchema = z.object({
   fileBase64: z.string().min(1, 'fileBase64 is required.'),
@@ -115,13 +91,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const client = getClient();
     const fileBuffer = Buffer.from(fileBase64, 'base64');
+    const maxUploadBytes = getMaxUploadBytes();
 
-    if (fileBuffer.length > MAX_UPLOAD_BYTES) {
+    if (fileBuffer.length > maxUploadBytes) {
       return sendError(
         res,
         413,
         'PAYLOAD_TOO_LARGE',
-        `File too large. Max ${Math.floor(MAX_UPLOAD_BYTES / 1_000_000)}MB allowed.`,
+        `File too large. Max ${Math.floor(maxUploadBytes / 1_000_000)}MB allowed.`,
         { size: fileBuffer.length },
       );
     }

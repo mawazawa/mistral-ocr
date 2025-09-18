@@ -33,6 +33,13 @@ let originalKey: string | undefined;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  
+  // Reset all mock implementations
+  mockClient.files.upload.mockReset();
+  mockClient.files.getSignedUrl.mockReset();
+  mockClient.ocr.process.mockReset();
+  mockClient.chat.complete.mockReset();
+  
   (Mistral as unknown as vi.Mock).mockReturnValue(mockClient);
   originalKey = process.env.MISTRAL_API_KEY;
 });
@@ -137,8 +144,16 @@ describe('OCR handler', () => {
 
     expect(res.status).toHaveBeenCalledWith(413);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ error: expect.objectContaining({ code: 'PAYLOAD_TOO_LARGE' }) }),
+      expect.objectContaining({ 
+        error: expect.objectContaining({ 
+          code: 'PAYLOAD_TOO_LARGE',
+          message: expect.stringContaining('File too large')
+        }) 
+      }),
     );
+
+    // Don't call the upload method since we should return early
+    expect(mockClient.files.upload).not.toHaveBeenCalled();
 
     process.env.MAX_UPLOAD_BYTES = originalMax;
   });

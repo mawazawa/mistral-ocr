@@ -1,4 +1,61 @@
 /**
+ * Configuration for file validation
+ */
+export const FILE_VALIDATION = {
+  MAX_SIZE: 4.5 * 1024 * 1024, // 4.5MB
+  ALLOWED_TYPES: ['application/pdf'],
+  ALLOWED_EXTENSIONS: ['.pdf']
+} as const;
+
+/**
+ * Validation result for file checks
+ */
+export interface FileValidationResult {
+  isValid: boolean;
+  error?: string;
+}
+
+/**
+ * Validates a file for size and type constraints.
+ *
+ * @param {File} file - The file to validate.
+ * @returns {FileValidationResult} The validation result.
+ */
+export const validateFile = (file: File): FileValidationResult => {
+  // Check file size
+  if (file.size > FILE_VALIDATION.MAX_SIZE) {
+    const maxMB = Math.floor(FILE_VALIDATION.MAX_SIZE / (1024 * 1024));
+    return {
+      isValid: false,
+      error: `File too large. Maximum size allowed is ${maxMB}MB.`
+    };
+  }
+
+  // Check MIME type
+  if (!FILE_VALIDATION.ALLOWED_TYPES.includes(file.type as 'application/pdf')) {
+    return {
+      isValid: false,
+      error: 'Only PDF files are supported.'
+    };
+  }
+
+  // Check file extension as fallback
+  const fileName = file.name.toLowerCase();
+  const hasValidExtension = FILE_VALIDATION.ALLOWED_EXTENSIONS.some(ext => 
+    fileName.endsWith(ext)
+  );
+  
+  if (!hasValidExtension) {
+    return {
+      isValid: false,
+      error: 'Only PDF files are supported.'
+    };
+  }
+
+  return { isValid: true };
+};
+
+/**
  * Reads a `File` object and converts it to a base64 encoded string.
  *
  * @param {File} file - The file to read.
