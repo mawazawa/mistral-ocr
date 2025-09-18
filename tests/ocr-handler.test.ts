@@ -57,7 +57,9 @@ describe('OCR handler', () => {
     await handler(req, res);
 
     expect(res.status).toHaveBeenCalledWith(405);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Method Not Allowed' });
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: expect.objectContaining({ code: 'METHOD_NOT_ALLOWED' }) }),
+    );
   });
 
   it('validates presence of fileBase64', async () => {
@@ -67,7 +69,9 @@ describe('OCR handler', () => {
     await handler(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'fileBase64 is required.' });
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: expect.objectContaining({ code: 'INVALID_REQUEST' }) }),
+    );
   });
 
   it('fails when API key is missing', async () => {
@@ -78,7 +82,11 @@ describe('OCR handler', () => {
     await handler(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Missing MISTRAL_API_KEY environment variable.' });
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'INTERNAL_SERVER_ERROR', message: expect.stringContaining('Missing MISTRAL_API_KEY') }),
+      }),
+    );
   });
 
   it('returns OCR payload when processing succeeds', async () => {
@@ -115,5 +123,23 @@ describe('OCR handler', () => {
 
     expect(mockClient.chat.complete).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ answer: 'qa-answer' }));
+  });
+
+  it('returns 413 when payload exceeds MAX_UPLOAD_BYTES', async () => {
+    process.env.MISTRAL_API_KEY = 'test-key';
+    const originalMax = process.env.MAX_UPLOAD_BYTES;
+    process.env.MAX_UPLOAD_BYTES = '3'; // 3 bytes
+
+    const req = createRequest({ fileBase64: 'dGVzdA==' }); // 'test' => 4 bytes
+    const res = createResponse();
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(413);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: expect.objectContaining({ code: 'PAYLOAD_TOO_LARGE' }) }),
+    );
+
+    process.env.MAX_UPLOAD_BYTES = originalMax;
   });
 });

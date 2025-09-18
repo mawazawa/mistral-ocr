@@ -1,5 +1,16 @@
+/*
+ ██████╗  █████╗ ██╗    ███████╗    ██████╗  ██████╗ ██████╗
+██╔════╝ ██╔══██╗╚═╝    ██╔════╝    ██╔══██╗██╔═══██╗██╔══██╗
+██║  ███╗███████║██╗    ███████╗    ██████╔╝██║   ██║██████╔╝
+██║   ██║██╔══██║██║    ╚════██║    ██╔══██╗██║   ██║██╔══██╗
+╚██████╔╝██║  ██║██║    ███████║    ██████╔╝╚██████╔╝██║  ██║
+ ╚═════╝ ╚═╝  ╚═╝╚═╝    ╚══════╝    ╚═════╝  ╚═════╝ ╚═╝  ╚═╝
+
+  FILE: api/ocr.ts
+*/
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Mistral } from '@mistralai/mistralai';
+import { z } from 'zod';
 
 /**
  * Defines the expected shape of the request body for the OCR endpoint.
@@ -55,6 +66,28 @@ export const normalizeText = (value?: string | null) => {
   return trimmed.length ? trimmed : undefined;
 };
 
+// Validation schema and limits
+const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES ?? 4_500_000);
+
+const OcrRequestSchema = z.object({
+  fileBase64: z.string().min(1, 'fileBase64 is required.'),
+  fileName: z.string().trim().default('document.pdf'),
+  includeImageBase64: z.boolean().optional().default(false),
+  pages: z.array(z.number().int().positive()).optional(),
+  query: z
+    .union([z.string(), z.null(), z.undefined()])
+    .transform((v) => normalizeText(typeof v === 'string' ? v : undefined))
+    .optional(),
+});
+
+const sendError = (
+  res: VercelResponse,
+  status: number,
+  code: string,
+  message: string,
+  details?: unknown,
+) => res.status(status).json({ error: { code, message, details } });
+
 /**
  * Handles the OCR processing request.
  *
@@ -69,21 +102,29 @@ export const normalizeText = (value?: string | null) => {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return sendError(res, 405, 'METHOD_NOT_ALLOWED', 'Method Not Allowed');
   }
 
   try {
-    const body = req.body as OcrRequestPayload | undefined;
-    if (!body?.fileBase64) {
-      return res.status(400).json({ error: 'fileBase64 is required.' });
+    const parsed = OcrRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return sendError(res, 400, 'INVALID_REQUEST', 'Invalid request body.', parsed.error.flatten());
     }
 
-    const fileName = body.fileName ?? 'document.pdf';
-    const includeImages = Boolean(body.includeImageBase64);
-    const query = normalizeText(body.query);
+    const { fileBase64, fileName, includeImageBase64, pages, query } = parsed.data;
 
     const client = getClient();
-    const fileBuffer = Buffer.from(body.fileBase64, 'base64');
+    const fileBuffer = Buffer.from(fileBase64, 'base64');
+
+    if (fileBuffer.length > MAX_UPLOAD_BYTES) {
+      return sendError(
+        res,
+        413,
+        'PAYLOAD_TOO_LARGE',
+        `File too large. Max ${Math.floor(MAX_UPLOAD_BYTES / 1_000_000)}MB allowed.`,
+        { size: fileBuffer.length },
+      );
+    }
 
     const upload = await client.files.upload({
       file: {
@@ -105,8 +146,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         type: 'document_url',
         documentUrl,
       },
-      includeImageBase64: includeImages,
-      pages: body.pages,
+      includeImageBase64: includeImageBase64,
+      pages,
     });
 
     let answer: string | undefined;
@@ -147,6 +188,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected server error.';
-    return res.status(500).json({ error: message });
+    return sendError(res, 500, 'INTERNAL_SERVER_ERROR', message);
   }
 }
