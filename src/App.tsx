@@ -3,6 +3,7 @@ import './App.css';
 import { readFileAsBase64, parsePageSelection, validateFile } from './lib/file';
 import { resolveApiUrl } from './lib/api';
 import { prepareDisplayPages } from './lib/ocr';
+import ResultsViewer from './components/ResultsViewer';
 import type { OcrBlock, OcrResponsePayload } from './types/mistral';
 
 /**
@@ -191,7 +192,6 @@ function App() {
     [result],
   );
 
-  const [activeTab, setActiveTab] = useState<'structured' | 'markdown' | 'document'>('structured');
 
   return (
     <main className="app-shell">
@@ -339,72 +339,11 @@ function App() {
           </button>
         </div>
 
-        {result?.answer ? (
-          <article className="answer">
-            <h3>Answer</h3>
-            <p>{result.answer}</p>
-          </article>
-        ) : null}
-
-        {displayPages.length ? (
-          activeTab === 'structured' ? (
-            <div className="page-grid">
-              {displayPages.map((page) => (
-                <article key={page.pageNumber} className="page-card">
-                  <h3>Page {page.pageNumber}</h3>
-                  {page.blocks.length ? (
-                    <ul>
-                      {page.blocks.slice(0, 50).map((block, index) => (
-                        <li key={block.id ?? `${page.pageNumber}-${index}`}>
-                          <span className="tag">{block.type ?? 'text'}</span>
-                          <p>{describeBlock(block)}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p>No structured blocks detected.</p>
-                  )}
-                </article>
-              ))}
-            </div>
-          ) : activeTab === 'markdown' ? (
-            <div className="page-grid">
-              {displayPages.map((page) => (
-                <article key={page.pageNumber} className="page-card">
-                  <h3>Page {page.pageNumber}</h3>
-                  {page.markdown ? (
-                    <div className="markdown-result">
-                      {page.markdown
-                        .split(/\n\s*\n/)
-                        .map((paragraph) => paragraph.trim())
-                        .filter((paragraph) => paragraph.length > 0)
-                        .map((paragraph, index) => (
-                          <p key={`${page.pageNumber}-paragraph-${index}`}>{paragraph}</p>
-                        ))}
-                    </div>
-                  ) : (
-                    <p>No markdown available.</p>
-                  )}
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="document-viewer">
-              {result?.documentUrl ? (
-                <iframe
-                  title="Document Viewer"
-                  src={result.documentUrl}
-                  className="pdf-frame"
-                  sandbox="allow-same-origin allow-scripts allow-downloads"
-                />
-              ) : (
-                <p className="placeholder">No document URL available for preview.</p>
-              )}
-            </div>
-          )
-        ) : (
-          <p className="placeholder">Your document analysis will appear here</p>
-        )}
+        <ResultsViewer
+          pages={displayPages}
+          documentUrl={result?.documentUrl}
+          answer={result?.answer}
+        />
       </section>
     </main>
   );
