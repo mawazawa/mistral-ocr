@@ -338,6 +338,40 @@ button[type='submit']:disabled {
   font-weight: 600;
 }
 
+/* Apple-style Tabs */
+.tabs {
+  display: inline-flex;
+  gap: var(--spacing-sm);
+  background: var(--color-secondary-background);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-lg);
+  border: 0.5px solid var(--color-quaternary-label);
+  margin-bottom: var(--spacing-lg);
+}
+
+.tab {
+  font-family: var(--font-family);
+  font-size: var(--text-callout);
+  font-weight: 600;
+  color: var(--color-secondary-label);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tab:hover {
+  background: var(--color-tertiary-background);
+}
+
+.tab.active {
+  color: var(--color-label);
+  background: var(--color-system-background);
+  box-shadow: var(--shadow-sm);
+}
+
 /* Apple-style Answer Card */
 .answer {
   padding: var(--spacing-lg);
@@ -454,6 +488,21 @@ button[type='submit']:disabled {
   color: var(--color-label);
   font-size: var(--text-body);
   line-height: 1.5;
+}
+
+/* Document Viewer */
+.document-viewer {
+  background: var(--color-secondary-background);
+  border: 0.5px solid var(--color-quaternary-label);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.pdf-frame {
+  width: 100%;
+  min-height: 70vh;
+  border: none;
+  background: var(--color-system-background);
 }
 
 /* Apple-style Drag and Drop File Upload */
