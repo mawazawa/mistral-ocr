@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run --environment=jsdom --setupFiles=tests/setup.ts",
     "test:e2e:live": "tsx scripts/e2e-live-ocr.ts"
   },
   "dependencies": {
