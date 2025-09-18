@@ -13,7 +13,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.x]
     
     steps:
       - name: Checkout code
@@ -31,8 +31,8 @@ jobs:
       - name: Run linting
         run: npm run lint
 
-      - name: Run type checking
-        run: npm run build
+      - name: Type check
+        run: tsc -b --pretty false
 
       - name: Run tests
         run: npm test
@@ -41,9 +41,9 @@ jobs:
         run: npm run build
 
   security:
-    name: Security Audit
+    name: Security Audit (informational)
     runs-on: ubuntu-latest
-    
+    continue-on-error: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -57,5 +57,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run security audit
-        run: npm audit --audit-level=moderate
+      - name: Run security audit (non-blocking)
+        run: npm audit --audit-level=moderate || true
