@@ -46,7 +46,9 @@ async function run() {
   });
 
   // Basic sanity checks
-  if (!ocr || (Array.isArray((ocr as any).pages) && (ocr as any).pages.length === 0)) {
+  type OcrWithPages = { pages?: unknown[] } | undefined;
+  const pages = (ocr as OcrWithPages)?.pages;
+  if (!ocr || (Array.isArray(pages) && pages.length === 0)) {
     throw new Error('OCR returned no pages');
   }
 
@@ -65,14 +67,25 @@ async function run() {
       },
     ],
   });
-  const answer = Array.isArray(qa.choices?.[0]?.message?.content)
-    ? (qa.choices![0]!.message!.content!.find((p: any) => p.type === 'text') as any)?.text
-    : qa.choices?.[0]?.message?.content;
+  let answer: string | undefined;
+  const contentUnknown = qa.choices?.[0]?.message?.content as unknown;
+  if (Array.isArray(contentUnknown)) {
+    const textPart = (contentUnknown as unknown[]).find((p): p is { type: 'text'; text: string } => {
+      if (typeof p !== 'object' || p === null) return false;
+      const rec = p as Record<string, unknown>;
+      return rec.type === 'text' && typeof rec.text === 'string';
+    });
+    if (textPart) {
+      answer = textPart.text;
+    }
+  } else if (typeof contentUnknown === 'string') {
+    answer = contentUnknown;
+  }
 
   console.log('Live OCR E2E:');
   console.log('- Uploaded file id:', upload.id);
   console.log('- Signed URL:', documentUrl);
-  console.log('- OCR pages:', (ocr as any).pages?.length ?? 'n/a');
+  console.log('- OCR pages:', Array.isArray(pages) ? pages.length : 'n/a');
   console.log('- QA answer:', typeof answer === 'string' ? answer.slice(0, 140) : 'n/a');
 
   console.log('\nOK: Live OCR E2E succeeded.');
