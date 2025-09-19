@@ -43,7 +43,11 @@ export const normalizeText = (value?: string | null) => {
 };
 
 // Validation schema and limits
-const getMaxUploadBytes = () => Number(process.env.MAX_UPLOAD_BYTES ?? 4_500_000);
+// Use a binary 4.5 MiB default to match frontend validation exactly
+const getMaxUploadBytes = () => {
+  const fromEnv = process.env.MAX_UPLOAD_BYTES;
+  return fromEnv ? Number(fromEnv) : Math.round(4.5 * 1024 * 1024);
+};
 
 const OcrRequestSchema = z.object({
   fileBase64: z.string().min(1, 'fileBase64 is required.'),
@@ -94,11 +98,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const maxUploadBytes = getMaxUploadBytes();
 
     if (fileBuffer.length > maxUploadBytes) {
+      const maxMb = maxUploadBytes / (1024 * 1024);
+      const maxMbText = Number.isInteger(maxMb) ? String(maxMb) : maxMb.toFixed(1);
       return sendError(
         res,
         413,
         'PAYLOAD_TOO_LARGE',
-        `File too large. Max ${Math.floor(maxUploadBytes / 1_000_000)}MB allowed.`,
+        `File too large. Max ${maxMbText}MB allowed.`,
         { size: fileBuffer.length },
       );
     }

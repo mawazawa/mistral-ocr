@@ -232,7 +232,7 @@ function App() {
                   <div className="upload-prompt">
                     <span className="upload-icon">📎</span>
                     <span>Select a PDF or drag and drop</span>
-                    <small>Maximum file size: 4 MB</small>
+                    <small>Maximum file size: 4.5 MB</small>
                   </div>
                 )}
               </label>

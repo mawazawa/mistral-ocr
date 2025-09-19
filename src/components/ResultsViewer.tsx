@@ -83,7 +83,7 @@ export const ResultsViewer: React.FC<ResultsViewerProps> = ({ pages, documentUrl
                 title="Document Viewer"
                 src={documentUrl}
                 className="pdf-frame"
-                sandbox="allow-same-origin allow-scripts allow-downloads"
+                sandbox="allow-same-origin allow-downloads"
               />
             ) : (
               <p className="placeholder">No document URL available for preview.</p>

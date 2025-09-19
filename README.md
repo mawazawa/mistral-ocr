@@ -77,6 +77,10 @@ All functions, classes, and type interfaces in the codebase are fully documented
    # Vercel will start on http://localhost:3000 and expose /api/ocr alongside the Vite frontend
    ```
 
+5. **Security**
+   - Do not commit real secrets. `.env` is ignored; use `.env.example` for placeholders.
+   - The app enforces a 4.5 MB max upload (configurable via `MAX_UPLOAD_BYTES`).
+
 4. **Build for production**
    ```bash
    npm run build

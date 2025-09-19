@@ -12,15 +12,17 @@ const makePages = (): DisplayPage[] => [
 describe('ResultsViewer', () => {
   it('renders tabs and defaults to structured view', () => {
     render(<ResultsViewer pages={makePages()} />);
-    expect(screen.getByRole('tab', { name: 'Structured' })).toHaveAttribute('aria-selected', 'true');
+    const [structuredTab] = screen.getAllByRole('tab', { name: 'Structured' });
+    expect(structuredTab).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
     expect(screen.getByText('Hello World')).toBeInTheDocument();
   });
 
   it('switches to markdown tab and renders markdown paragraphs', () => {
     render(<ResultsViewer pages={makePages()} />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Markdown' }));
-    expect(screen.getByRole('tab', { name: 'Markdown' })).toHaveAttribute('aria-selected', 'true');
+    const [markdownTab] = screen.getAllByRole('tab', { name: 'Markdown' });
+    fireEvent.click(markdownTab);
+    expect(markdownTab).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByText('Hello World')).toBeInTheDocument();
   });
 
@@ -37,14 +39,15 @@ describe('ResultsViewer', () => {
 
   it('zoom buttons toggle active state', () => {
     render(<ResultsViewer pages={makePages()} />);
-    const zoom125 = screen.getByRole('button', { name: '125%' });
+    const [zoom125] = screen.getAllByRole('button', { name: '125%' });
     fireEvent.click(zoom125);
     expect(zoom125).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('document tab renders iframe when URL is provided', () => {
     render(<ResultsViewer pages={makePages()} documentUrl="https://example.com/doc.pdf" />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Document' }));
+    const [docTab] = screen.getAllByRole('tab', { name: 'Document' });
+    fireEvent.click(docTab);
     const frame = screen.getByTitle('Document Viewer');
     expect(frame).toBeInTheDocument();
   });
