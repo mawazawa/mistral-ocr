@@ -14,6 +14,7 @@ export const ResultsViewer: React.FC<ResultsViewerProps> = ({ pages, documentUrl
   const [activeTab, setActiveTab] = useState<ResultsTab>('structured');
   const [currentPage, setCurrentPage] = useState(1);
   const [zoom, setZoom] = useState<number>(100);
+  const [copied, setCopied] = useState(false);
 
   const totalPages = pages.length;
   const safeCurrentPage = Math.min(Math.max(currentPage, 1), Math.max(totalPages, 1));
@@ -33,6 +34,33 @@ export const ResultsViewer: React.FC<ResultsViewerProps> = ({ pages, documentUrl
   };
 
   const setZoomPercent = (value: number) => setZoom(value);
+
+  // Export helpers
+  const handleCopyMarkdown = async () => {
+    try {
+      const markdown = (pages[safeCurrentPage - 1]?.markdown ?? '').trim();
+      if (!markdown) return;
+      await navigator.clipboard.writeText(markdown);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {
+      // no-op
+    }
+  };
+
+  const handleExportJson = () => {
+    const page = pages[safeCurrentPage - 1];
+    const payload = JSON.stringify(page, null, 2);
+    const blob = new Blob([payload], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ocr-page-${page?.pageNumber ?? safeCurrentPage}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="results-viewer" data-testid="results-viewer">
@@ -115,6 +143,14 @@ export const ResultsViewer: React.FC<ResultsViewerProps> = ({ pages, documentUrl
                     {z}%
                   </button>
                 ))}
+              </div>
+              <div className="export" aria-label="Export">
+                <button type="button" onClick={handleCopyMarkdown} disabled={!page?.markdown} aria-live="polite">
+                  {copied ? 'Copied ✓' : 'Copy Markdown'}
+                </button>
+                <button type="button" onClick={handleExportJson}>
+                  Export JSON
+                </button>
               </div>
             </div>
 

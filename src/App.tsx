@@ -86,6 +86,8 @@ function App() {
     }
   };
 
+  // Keyboard accessibility: make Enter/Space activate file input (handled on container)
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!file) {
@@ -198,12 +200,23 @@ function App() {
         <form className="ocr-form" onSubmit={handleSubmit}>
           <div className="form-field">
             <span>PDF file</span>
-            <div 
+            <div
               className={`file-upload-area ${isDragOver ? 'drag-over' : ''} ${file ? 'has-file' : ''}`}
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
+              role="button"
+              aria-label="Upload a PDF by clicking or dragging and dropping"
+              aria-describedby="pdf-upload-help"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  const input = document.getElementById('pdf-upload') as HTMLInputElement | null;
+                  input?.click();
+                }
+              }}
             >
               <input
                 type="file"
@@ -214,7 +227,7 @@ function App() {
                 className="file-input"
                 id="pdf-upload"
               />
-              <label htmlFor="pdf-upload" className="file-upload-label">
+              <label htmlFor="pdf-upload" className="file-upload-label" id="pdf-upload-help">
                 {file ? (
                   <div className="file-selected">
                     <span className="file-icon">📋</span>
@@ -272,7 +285,7 @@ function App() {
           </label>
 
           {isSubmitting && uploadProgress > 0 && (
-            <div className="progress-container">
+            <div className="progress-container" role="status" aria-live="polite">
               <div className="progress-bar">
                 <div 
                   className="progress-fill"
@@ -293,7 +306,7 @@ function App() {
           </button>
         </form>
 
-        {error ? <p className="error">{error}</p> : null}
+        {error ? <p className="error" role="alert" aria-live="assertive">{error}</p> : null}
       </section>
 
       <section className="panel results">
