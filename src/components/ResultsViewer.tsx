@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Document, Page } from 'react-pdf';
 import type { DisplayPage } from '../lib/ocr';
 
 export type ResultsTab = 'structured' | 'markdown' | 'document';
@@ -207,15 +208,12 @@ export const ResultsViewer: React.FC<ResultsViewerProps> = ({ pages, documentUrl
                 </article>
               </section>
 
-              {/* Live document preview panel */}
+              {/* Live document preview panel (react-pdf) */}
               {documentUrl ? (
                 <section className="document-viewer">
-                  <iframe
-                    title="Document Viewer"
-                    src={documentUrl}
-                    className="pdf-frame"
-                    sandbox="allow-same-origin allow-downloads"
-                  />
+                  <Document file={documentUrl} loading={<p className="placeholder">Loading document…</p>}>
+                    <Page pageNumber={safeCurrentPage} scale={zoom / 100} />
+                  </Document>
                 </section>
               ) : null}
             </div>

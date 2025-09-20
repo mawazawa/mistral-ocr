@@ -4,6 +4,8 @@ export interface DisplayPage {
   pageNumber: number;
   blocks: OcrBlock[];
   markdown: string;
+  width?: number;
+  height?: number;
 }
 
 const normalizePageNumber = (page: OcrPage, index: number): number => {
@@ -64,6 +66,8 @@ export const prepareDisplayPages = (pages?: OcrPage[]): DisplayPage[] => {
       pageNumber: normalizePageNumber(page, index),
       blocks,
       markdown,
+      width: typeof page.width === 'number' ? page.width : undefined,
+      height: typeof page.height === 'number' ? page.height : undefined,
     };
   });
 };
