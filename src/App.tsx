@@ -88,41 +88,30 @@ function App() {
 
   // Keyboard accessibility: make Enter/Space activate file input (handled on container)
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!file) {
-      setError('Please choose a PDF to analyse.');
-      return;
-    }
-
+  const processFile = async (fileToProcess: File) => {
     setIsSubmitting(true);
     setError(null);
     setResult(null);
     setUploadProgress(0);
 
     try {
-      // Progress: Reading file
       setUploadProgress(20);
-      const base64 = await readFileAsBase64(file);
-      
-      // Progress: Preparing payload
+      const base64 = await readFileAsBase64(fileToProcess);
+
       setUploadProgress(40);
       const parsedPages = parsePageSelection(pages);
       const payload = {
         fileBase64: base64,
-        fileName: file.name,
+        fileName: fileToProcess.name,
         includeImageBase64: includeImages,
         pages: parsedPages,
         query: question.trim() ? question.trim() : undefined,
       };
 
-      // Progress: Sending request
       setUploadProgress(60);
       const response = await fetch(resolveApiUrl('/api/ocr'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
@@ -130,38 +119,31 @@ function App() {
         let message = 'Unexpected error while calling OCR API.';
         try {
           const errorData = await response.json();
-          if (errorData.error?.message) {
-            message = errorData.error.message;
-          }
+          if (errorData.error?.message) message = errorData.error.message;
         } catch {
-          // If response is not JSON, try to get text
           try {
             message = await response.text();
           } catch {
-            // Keep default message if all parsing fails
+            /* no-op */
           }
         }
         throw new Error(message);
       }
 
-      // Progress: Processing response
       setUploadProgress(80);
       const data = (await response.json()) as OcrResponsePayload;
       setUploadProgress(100);
       setResult(data);
     } catch (submissionError) {
       let message = 'Failed to process document.';
-      
       if (submissionError instanceof Error) {
         const errorMsg = submissionError.message.toLowerCase();
-        
-        // Categorize errors for better user experience
         if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
           message = 'Network error. Please check your connection and try again.';
         } else if (errorMsg.includes('timeout') || errorMsg.includes('timed out')) {
           message = 'Request timed out. Please try again with a smaller file.';
         } else if (errorMsg.includes('file too large') || errorMsg.includes('payload too large')) {
-          message = 'File is too large. Please choose a file smaller than 4MB.';
+          message = 'File is too large. Please choose a file smaller than 4.5MB.';
         } else if (errorMsg.includes('invalid') || errorMsg.includes('bad request')) {
           message = 'Invalid file or request. Please ensure you selected a valid PDF file.';
         } else if (errorMsg.includes('unauthorized') || errorMsg.includes('api key')) {
@@ -169,15 +151,38 @@ function App() {
         } else if (errorMsg.includes('rate limit') || errorMsg.includes('quota')) {
           message = 'Service temporarily unavailable. Please try again in a few minutes.';
         } else {
-          // Use the original message if it's user-friendly, otherwise use generic message
           message = submissionError.message.length < 200 ? submissionError.message : message;
         }
       }
-      
       setError(message);
     } finally {
       setIsSubmitting(false);
       setUploadProgress(0);
+    }
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!file) {
+      setError('Please choose a PDF to analyse.');
+      return;
+    }
+    await processFile(file);
+  };
+
+  const handleTrySample = async () => {
+    try {
+      setError(null);
+      // Lightweight sample PDF
+      const url = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to download sample PDF.');
+      const blob = await res.blob();
+      const sample = new File([blob], 'sample.pdf', { type: 'application/pdf' });
+      setFile(sample);
+      await processFile(sample);
+    } catch (e) {
+      setError('Could not load the sample PDF. Please try again.');
     }
   };
 
@@ -301,9 +306,14 @@ function App() {
             </div>
           )}
 
-          <button type="submit" disabled={isSubmitting || !file}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button type="submit" disabled={isSubmitting || !file}>
             {isSubmitting ? 'Processing…' : 'Analyze Document'}
-          </button>
+            </button>
+            <button type="button" onClick={handleTrySample} disabled={isSubmitting} aria-label="Try with a sample PDF">
+              {isSubmitting ? 'Please wait…' : 'Try sample PDF'}
+            </button>
+          </div>
         </form>
 
         {error ? <p className="error" role="alert" aria-live="assertive">{error}</p> : null}
