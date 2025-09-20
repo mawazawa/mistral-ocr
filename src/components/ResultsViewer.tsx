@@ -154,7 +154,7 @@ export const ResultsViewer: React.FC<ResultsViewerProps> = ({ pages, documentUrl
               </div>
             </div>
 
-            <div className="viewer-body">
+            <div className="viewer-body" style={{ display: 'grid', gridTemplateColumns: documentUrl ? '360px 1fr 1fr' : '360px 1fr', gap: 16 }}>
               <aside className="mini-map" data-testid="mini-map">
                 <ul>
                   {pages.map((p) => (
@@ -172,6 +172,7 @@ export const ResultsViewer: React.FC<ResultsViewerProps> = ({ pages, documentUrl
                 </ul>
               </aside>
 
+              {/* Structured/Markdown panel */}
               <section className="page-stage" style={{ ['--zoom' as unknown as string]: `${zoom}%` }}>
                 <article className="page-card scaled" data-zoom={`${zoom}`}>
                   <h3>Page {page.pageNumber}</h3>
@@ -205,6 +206,18 @@ export const ResultsViewer: React.FC<ResultsViewerProps> = ({ pages, documentUrl
                   )}
                 </article>
               </section>
+
+              {/* Live document preview panel */}
+              {documentUrl ? (
+                <section className="document-viewer">
+                  <iframe
+                    title="Document Viewer"
+                    src={documentUrl}
+                    className="pdf-frame"
+                    sandbox="allow-same-origin allow-downloads"
+                  />
+                </section>
+              ) : null}
             </div>
           </div>
         )

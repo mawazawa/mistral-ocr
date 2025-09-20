@@ -100,19 +100,22 @@ function App() {
 
       setUploadProgress(40);
       const parsedPages = parsePageSelection(pages);
-      const payload = {
-        fileBase64: base64,
-        fileName: fileToProcess.name,
-        includeImageBase64: includeImages,
-        pages: parsedPages,
-        query: question.trim() ? question.trim() : undefined,
-      };
 
       setUploadProgress(60);
+      // Prefer multipart upload for performance
+      const form = new FormData();
+      const raw = atob(base64);
+      const bytes = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i);
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      form.append('file', blob, fileToProcess.name);
+      form.append('includeImageBase64', String(includeImages));
+      if (parsedPages) form.append('pages', parsedPages.join(','));
+      if (question.trim()) form.append('query', question.trim());
+
       const response = await fetch(resolveApiUrl('/api/ocr'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: form,
       });
 
       if (!response.ok) {
