@@ -1,15 +1,8 @@
-const LOOPBACK_HOST_PATTERN = /^(localhost|(?:127(?:\.\d{1,3}){3})|\[?::1\]?)(?:$|:)/i;
+const LOOPBACK_HOST_PATTERN =
+  /^((?:[^.]+\.)*localhost|(?:127(?:\.\d{1,3}){3})|\[?::1\]?)(?:$|:)/i;
 
 const isLoopbackHost = (hostname: string): boolean => {
-  const lower = hostname.toLowerCase();
-  return (
-    lower === 'localhost' ||
-    lower.endsWith('.localhost') ||
-    lower === '::1' ||
-    lower === '[::1]' ||
-    lower.startsWith('127.') ||
-    LOOPBACK_HOST_PATTERN.test(lower)
-  );
+  return LOOPBACK_HOST_PATTERN.test(hostname);
 };
 
 export const createApiUrlResolver = (configuredBaseUrl?: string) => {

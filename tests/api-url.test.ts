@@ -32,4 +32,15 @@ describe('createApiUrlResolver', () => {
     const resolve = createApiUrlResolver('https://api.example.com');
     expect(resolve('/api/ocr')).toBe('https://api.example.com/api/ocr');
   });
+
+  it('does not treat hostnames starting with 127. as loopback', () => {
+    vi.stubGlobal('window', {
+      location: {
+        hostname: 'mistral-ocr.vercel.app',
+      },
+    });
+
+    const resolve = createApiUrlResolver('http://127.not-a-loopback.com');
+    expect(resolve('/api/ocr')).toBe('http://127.not-a-loopback.com/api/ocr');
+  });
 });
