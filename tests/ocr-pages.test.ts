@@ -17,4 +17,21 @@ describe('prepareDisplayPages', () => {
     });
     expect(pages[0].blocks).toEqual([]);
   });
+
+  it('prefers the 1-based page index from the API', () => {
+    const pages = prepareDisplayPages([
+      {
+        index: 1,
+        markdown: 'Page 1 content.',
+      },
+      {
+        index: 2,
+        markdown: 'Page 2 content.',
+      },
+    ]);
+
+    expect(pages).toHaveLength(2);
+    expect(pages[0].pageNumber).toBe(1);
+    expect(pages[1].pageNumber).toBe(2);
+  });
 });
